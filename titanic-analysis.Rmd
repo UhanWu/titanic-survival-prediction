@@ -1,0 +1,76 @@
+---
+title: "analysis"
+output: html_document
+date: "2022-08-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+```{r}
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+
+
+```
+
+# Probability by Sex
+```{r}
+# General Distribution
+train_data |>
+  ggplot(aes(x = Sex, fill = as.factor(Survived)))+
+  geom_bar()
+```
+
+
+```{r}
+train_data |>
+  select(Sex, Survived) |>
+  mutate(number = 1) |>
+  group_by(Sex) |>
+  summarise(sex_survival = sum(Survived)/sum(number))
+```
+
+# Probability by Age
+
+```{r}
+# General Distribution
+train_data |>
+  select(Age, Survived,Sex) |>
+  mutate(number = 1) |>
+  group_by(Age,Sex) |>
+  drop_na() |>
+  summarise(Sex,age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  ggplot(aes(x = Age, y = age_survival, color = Sex))+
+  geom_point() + 
+  geom_smooth(method = "loess", formula =  y ~x, se = FALSE)+
+  facet_wrap(~Sex)+
+  labs(title = "Titanic Survival with respect to Sex and Age",
+       subtitle = "Female have a significant higher survival rate",
+       y = "Survival Rate")
+
+
+```
+```{r}
+train_data |>
+  select(Age, Survived,Sex) |>
+  filter(Sex == "male")|>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  ggplot(aes(x = Age, y = age_survival))+
+  geom_point()+
+  geom_smooth(method = "loess", formula =  y ~x)
+```
+
+
+
+
+
+
+
+
