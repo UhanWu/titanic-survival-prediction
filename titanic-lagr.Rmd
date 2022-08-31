@@ -1,0 +1,89 @@
+---
+title: "largrange-titanic"
+output: html_document
+date: "2022-08-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(polynom)
+library(ggpubr)
+library(ggpmisc)
+```
+
+
+```{r}
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+
+```
+
+```{r}
+testing <- train_data |>
+  select(Age, Survived,Sex) |>
+  filter(Sex == "male")|>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 5 ~ "Age Group 0-5",
+                               Age >= 5 & Age < 10 ~ "Age Group 5-10",
+                               Age >= 10 & Age < 15 ~ "Age Group 10-15",
+                               Age >= 15 & Age < 20 ~ "Age Group 15-20",
+                               Age >= 20 & Age < 35 ~ "Age Group 20-25",
+                               Age >= 25 & Age < 30 ~ "Age Group 25-30",
+                               Age >= 30 & Age < 45 ~ "Age Group 30-35",
+                               Age >= 35 & Age < 40 ~ "Age Group 35-40",
+                               Age >= 40 & Age < 45 ~ "Age Group 40-45",
+                               Age >= 45 & Age < 50 ~ "Age Group 45-50",
+                               Age >= 50 & Age < 55 ~ "Age Group 50-55",
+                               Age >= 55 & Age < 60 ~ "Age Group 55-60",
+                               Age >= 60 & Age < 65 ~ "Age Group 60-65",
+                               Age >= 65 & Age < 70 ~ "Age Group 65-70",
+                               Age >= 70 ~ "Age Group 70+"))
+  
+groups <- list("Age Group 0-5","Age Group 5-10","Age Group 10-15","Age Group 15-20",
+          "Age Group 20-35", "Age Group 35-45","Age Group 45-50","Age Group 50-55","Age Group 55-60",
+          "Age Group 60-65","Age Group 65-70","Age Group 70+")
+num = 1
+for (x in groups) {
+  test1 <- train_data |>
+  select(Age, Survived,Sex) |>
+  filter(Sex == "male")|>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 5 ~ "Age Group 0-5",
+                               Age >= 5 & Age < 10 ~ "Age Group 5-10",
+                               Age >= 10 & Age < 15 ~ "Age Group 10-15",
+                               Age >= 15 & Age < 20 ~ "Age Group 15-20",
+                               Age >= 20 & Age < 35 ~ "Age Group 20-35",
+                               Age >= 35 & Age < 45 ~ "Age Group 35-45",
+                               Age >= 45 & Age < 50 ~ "Age Group 45-50",
+                               Age >= 50 & Age < 55 ~ "Age Group 50-55",
+                               Age >= 55 & Age < 60 ~ "Age Group 55-60",
+                               Age >= 60 & Age < 65 ~ "Age Group 60-65",
+                               Age >= 65 & Age < 70 ~ "Age Group 65-70",
+                               Age >= 70 ~ "Age Group 70+"))|>
+    filter(age_group == x)
+  
+  
+  print(poly.calc(test1$Age, test1$age_survival))
+  print(num)
+  num = num +1
+}
+
+```
+
+```{r}
+test_data |>
+  mutate(x = Age)|>
+  mutate(survival_prob = 
+           case_when(Sex == "male" & Age >= 0 & Age < 5 ~ -130.7123 + 954.547*x - 2737.652*x^2 + 4008.237*x^3 - 3207.381*x^4 + 1389.788*x^5 - 301.6967*x^6 + 25.469*x^7 ,
+                     Sex == "male" & Age >= 5 & Age < 10 ~ 150.5 - 59.41667*x + 7.75*x^2 - 0.3333333*x^3 ,
+                     Sex == "male" & Age >= 10 & Age < 15 ~ 198.3333 - 53.44444*x + 4.75*x^2 - 0.1388889*x^3 ))
+```
+

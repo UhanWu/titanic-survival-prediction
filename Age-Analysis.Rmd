@@ -1,0 +1,93 @@
+---
+title: "test-data-analysis"
+output: html_document
+date: "2022-08-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(plotly)
+library(ggpubr)
+library(ggpmisc)
+```
+
+```{r}
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+```
+
+```{r}
+test_data |>
+  mutate(survival_prob = case_when(Sex == "male" & Age >= 0 & Age < 10 ~ 1.1-0.28*(Age)+0.046*Age*Age-0.0027*Age*Age*Age,
+                                   Sex == "male" & Age >= 10 & Age < 20 ~ -28+6.2*Age-0.44*Age*Age+0.0099*Age*Age*Age,
+                                   Sex == "male" & Age >= 20 & Age < 30 ~ 66-8.2*Age+0.34*Age*Age-0.0046*Age*Age*Age))
+```
+```{r}
+train_data |>
+  select(Age, Survived,Sex) |>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 10 ~ "Age Group 0-10",
+                               Age >= 10 & Age < 20 ~ "Age Group 10-20",
+                               Age >= 20 & Age < 30 ~ "Age Group 20-30",
+                               Age >= 30 & Age < 40 ~ "Age Group 30-40",
+                               Age >= 40 & Age < 50 ~ "Age Group 40-50",
+                               Age >= 50 & Age < 60 ~ "Age Group 50-60",
+                               Age >= 60 ~ "Age Group 60+"))|>
+  filter(age_group == "Age Group 0-10" |
+         age_group == "Age Group 10-20"|
+         age_group == "Age Group 20-30"|
+         age_group == "Age Group 30-40")|>
+  ggplot(aes(x = Age, y = age_survival))+
+  geom_line()+
+  facet_wrap(~age_group,nrow = 4)+
+  stat_smooth(method = 'lm', formula = y ~ poly(x, 4, raw = FALSE), se = FALSE)+
+  geom_point()+
+   stat_regline_equation(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = y ~ poly(x, 4, raw = FALSE)) 
+
+train_data |>
+  select(Age, Survived,Sex) |>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 10 ~ "Age Group 0-10",
+                               Age >= 10 & Age < 20 ~ "Age Group 10-20",
+                               Age >= 20 & Age < 30 ~ "Age Group 20-30",
+                               Age >= 30 & Age < 40 ~ "Age Group 30-40",
+                               Age >= 40 & Age < 50 ~ "Age Group 40-50",
+                               Age >= 50 & Age < 60 ~ "Age Group 50-60",
+                               Age >= 60 ~"Age Group 60+"))|>
+  filter(age_group == "Age Group 40-50"|
+         age_group == "Age Group 50-60" |
+         age_group == "Age Group 60+" )|>
+  ggplot(aes(x = Age, y = age_survival))+
+  geom_line()+
+  stat_smooth(method = 'lm', formula = y ~ poly(x, 4, raw = TRUE), se = FALSE)+
+  geom_point()+
+  facet_wrap(~age_group, nrow = 3)+
+   stat_regline_equation(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = y ~ poly(x, 4, raw = TRUE)) 
+
+  
+```
+```{r}
+train_data |>
+  select(Fare, Survived,Sex) |>
+  mutate(number = 1) |>
+  group_by(Fare) |>
+  drop_na() |>
+  summarise(Fare_survival = sum(Survived)/sum(number),.groups = 'drop')|>
+  ggplot(aes(x = Fare, y = Fare_survival))+
+  geom_point()+
+  geom_smooth(se = FALSE)
+```
+```{r}
+train_data
+```
+

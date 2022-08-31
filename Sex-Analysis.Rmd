@@ -1,0 +1,39 @@
+---
+title: "Sex-Analysis"
+output: html_document
+date: "2022-08-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(plotly)
+library(ggpubr)
+```
+
+
+```{r}
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+
+
+```
+
+
+# Probability by Sex
+```{r}
+# General Distribution
+train_data |>
+  ggplot(aes(x = Sex, fill = as.factor(Survived)))+
+  geom_bar()
+```
+
+
+```{r}
+train_data |>
+  select(Sex, Survived) |>
+  mutate(number = 1) |>
+  group_by(Sex) |>
+  summarise(sex_survival = sum(Survived)/891)
+```

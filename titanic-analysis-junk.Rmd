@@ -1,0 +1,191 @@
+---
+title: "analysis"
+output: html_document
+date: "2022-08-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(plotly)
+library(ggpubr)
+```
+
+```{r}
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+
+
+```
+
+# Probability by Sex
+```{r}
+# General Distribution
+train_data |>
+  ggplot(aes(x = Sex, fill = as.factor(Survived)))+
+  geom_bar()
+```
+
+
+```{r}
+train_data |>
+  select(Sex, Survived) |>
+  mutate(number = 1) |>
+  group_by(Sex) |>
+  summarise(sex_survival = sum(Survived)/sum(number))
+```
+
+# Probability by Age
+
+```{r}
+
+formula <- y ~ poly(x, 3, raw = TRUE)
+# General Distribution
+ train_data |>
+  select(Age, Survived,Sex) |>
+  mutate(number = 1) |>
+  group_by(Age,Sex) |>
+  drop_na() |>
+  summarise(Sex,age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  ggplot(aes(x = Age, y = age_survival, fill = Sex))+
+  geom_point() + 
+  geom_smooth( method = "lm", formula = formula)+
+  facet_wrap(~Sex)+
+  labs(title = "Titanic Survival with respect to Sex and Age",
+       subtitle = "Female generaly have a significant higher survival rate",
+       y = "Survival Rate")+
+  stat_regline_equation(aes(label =  paste(..eq.label.., ..adj.rr.label.., sep = "~~~~")),
+    formula = formula) 
+
+
+```
+```{r echo = FALSE}
+formula1 <- y ~ x
+# Male age 0 - 30
+train_data |>
+  select(Age, Survived,Sex) |>
+  filter(Sex == "male")|>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 10 ~ "Age Group 0-10",
+                               Age >= 10 & Age < 20 ~ "Age Group 10-20",
+                               Age >= 20 & Age < 30 ~ "Age Group 20-30",
+                               Age >= 30 & Age < 40 ~ "Age Group 30-40",
+                               Age >= 40 & Age < 50 ~ "Age Group 40-50",
+                               Age >= 50 & Age < 60 ~ "Age Group 50-60",
+                               Age >= 60 ~ "Age Group 60+"))|>
+  filter(age_group == "Age Group 0-10" |
+         age_group == "Age Group 10-20"|
+         age_group == "Age Group 20-30")|>
+  ggplot(aes(x = Age, y = age_survival))+
+  geom_point(alpha = 0.5)+
+  geom_smooth(method = "loess", formula =  formula1, color = "black", alpha = 0.1, se = FALSE)+
+   facet_wrap(~ age_group,nrow = 3)+
+  stat_regline_equation(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = formula1, color = "blue") +
+  labs(title = "Titanic Survival with respect to Sex and Age (Male 0 - 30)",
+       y = "Survival Rate")
+
+
+# Male age 30+
+
+train_data |>
+  select(Age, Survived,Sex) |>
+  filter(Sex == "male")|>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 10 ~ "Age Group 0-10",
+                               Age >= 10 & Age < 20 ~ "Age Group 10-20",
+                               Age >= 20 & Age < 30 ~ "Age Group 20-30",
+                               Age >= 30 & Age < 40 ~ "Age Group 30-40",
+                               Age >= 40 & Age < 50 ~ "Age Group 40-50",
+                               Age >= 50 & Age < 60 ~ "Age Group 50-60",
+                               Age >= 60 ~ "Age Group 60+"))|>
+  filter(age_group == "Age Group 30-40" |
+         age_group == "Age Group 40-50"|
+         age_group == "Age Group 50-60" |
+         age_group == "Age Group 60+")|>
+  ggplot(aes(x = Age, y = age_survival))+
+  geom_point(alpha = 0.5)+
+  stat_smooth(method = "lm", formula =  formula1, color = "black", alpha = 0.1, se = FALSE)+
+   facet_wrap(~ age_group,nrow = 4)+
+  stat_regline_equation(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = formula1, color = "blue") +
+  labs(title = "Titanic Survival with respect to Sex and Age (Male 30+)",
+       y = "Survival Rate")
+```
+
+
+```{r echo = FALSE}
+formula <- y ~ poly(x, 3, raw = TRUE)
+# Female Age 0-30
+train_data |>
+  select(Age, Survived,Sex) |>
+  filter(Sex == "female")|>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 10 ~ "Age Group 0-10",
+                               Age >= 10 & Age < 20 ~ "Age Group 10-20",
+                               Age >= 20 & Age < 30 ~ "Age Group 20-30",
+                               Age >= 30 & Age < 40 ~ "Age Group 30-40",
+                               Age >= 40 & Age < 50 ~ "Age Group 40-50",
+                               Age >= 50 ~ "Age Group 50+"))|>
+  filter(age_group == "Age Group 0-10" |
+         age_group == "Age Group 10-20"|
+         age_group == "Age Group 20-30")|>
+  ggplot(aes(x = Age, y = age_survival))+
+  geom_point(alpha = 0.2)+
+  geom_smooth(method = "loess", formula =  formula2, color = "black", se = FALSE, alpha = 0.3)+
+    facet_wrap(~ age_group, nrow = 3)+
+  stat_regline_equation(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = formula2, color = "red")+
+  labs(title = "Titanic Survival with respect to Sex and Age (Female 0 - 30)",
+       y = "Survival Rate")
+
+
+# Female Age 30+
+train_data |>
+  select(Age, Survived,Sex) |>
+  filter(Sex == "female")|>
+  mutate(number = 1) |>
+  group_by(Age) |>
+  drop_na() |>
+  summarise(age_survival = sum(Survived)/sum(number),.groups = 'drop') |>
+  mutate(age_group = case_when(Age >= 0 & Age < 10 ~ "Age Group 0-10",
+                               Age >= 10 & Age < 20 ~ "Age Group 10-20",
+                               Age >= 20 & Age < 30 ~ "Age Group 20-30",
+                               Age >= 30 & Age < 40 ~ "Age Group 30-40",
+                               Age >= 40 & Age < 50 ~ "Age Group 40-50",
+                               Age >= 50 ~ "Age Group 50+"))|>
+  filter(age_group == "Age Group 30-40" |
+         age_group == "Age Group 40-50"|
+         age_group == "Age Group 50+")|>
+  ggplot(aes(x = Age, y = age_survival))+
+  geom_point(alpha = 0.2)+
+  geom_smooth(method = "loess", formula =  formula2, color = "black", se = FALSE, alpha = 0.3)+
+    facet_wrap(~ age_group, nrow = 3)+
+  stat_regline_equation(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = formula2, color = "red")+
+  labs(title = "Titanic Survival with respect to Sex and Age (Female 30+)",
+       y = "Survival Rate")
+```
+
+
+```{r}
+test_data |>
+  mutate(survival_prob = case_when(Sex == "male"))
+```
+```{r}
+
+```
+
+
+
+
