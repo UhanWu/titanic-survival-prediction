@@ -1,0 +1,41 @@
+---
+title: "Pclass-Analysis"
+output: html_document
+date: "2022-09-01"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(plotly)
+library(ggpubr)
+library(ggpmisc)
+```
+
+```{r}
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+```
+
+
+```{r}
+train_data|>
+  group_by(Pclass) |>
+  mutate(number = 1) |>
+  summarise(embarked_survival = sum(Survived)/sum(number))
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+

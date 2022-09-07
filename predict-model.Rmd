@@ -1,0 +1,73 @@
+---
+title: "prediction_model"
+output: html_document
+date: "2022-09-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(FSelector)
+library(rpart)
+library(caret)
+library(rpart.plot)
+library(dplyr)
+library(data.tree)
+library(caTools)
+library(tidyverse)
+
+```
+
+```{r}
+
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+
+```
+
+```{r}
+df1 <- train_data |>
+  select(Sex, Age, Pclass, Survived,SibSp,Embarked,Fare, Parch) |>
+  mutate(Survived = as.factor(Survived))
+
+df2 <- test_data |>
+  select(Sex, Age, Pclass, SibSp, Embarked, Fare,Parch) 
+```
+
+
+```{r}
+
+train <- df1
+test <- df2
+```
+
+```{r}
+tree <- rpart(formula = Survived ~ Sex + Age + Pclass + 
+    Embarked + Fare + Parch + SibSp, data = train, 
+    method = "class", minsplit = 10, minbucket = 3)
+```
+
+
+```{r}
+tree.Survived.prediction <- predict(tree, test, type = 'class')
+
+```
+
+```{r}
+prp(tree)
+```
+
+```{r}
+prediction_model <- as.data.frame(tree.Survived.prediction)|>
+  mutate(PassengerId = 892:1309)|>
+  mutate(Survived = tree.Survived.prediction)|>
+  select(PassengerId,Survived)
+
+
+
+write_csv(prediction_model, path = "~/Desktop/Rdata-science/titanic-survival-prediction/titanic5.csv")
+```
+
+
+
+

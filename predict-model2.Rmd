@@ -1,0 +1,106 @@
+---
+title: "predict-model2"
+output: html_document
+date: "2022-09-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reshape2)
+library(tidyverse)
+library(keras)
+library(tensorflow)
+```
+
+```{r}
+
+titanic.data <- read_csv("./train.csv", show_col_types = FALSE)
+submission.data <- read_csv("./test.csv", show_col_types = FALSE)
+```
+
+```{r}
+training.idx.start = 178
+training.idx.stop = 891
+
+# limit the max number of dependends to 6
+submission.data$Parch[submission.data$Parch>6] <- 6
+PassengerId <- submission.data$PassengerId
+y <- titanic.data$Survived
+
+#replace missing age and fare with mean values
+mean.age <- as.numeric(titanic.data %>% summarise(m.age=mean(Age, na.rm = T)))
+mean.fare <- as.numeric(titanic.data %>% summarise(m.age=mean(Fare, na.rm = T)))
+
+titanic.data <- titanic.data %>% 
+  mutate(Age = coalesce(Age, mean.age),
+         Fare = coalesce(Fare, mean.fare))
+
+submission.data <- submission.data %>% 
+  mutate(Age = coalesce(Age, mean.age),
+         Fare = coalesce(Fare, mean.fare))
+
+# transform fare into logaritmic scale
+titanic.data$Fare <- log10(titanic.data$Fare+1)
+submission.data$Fare <- log10(submission.data$Fare+1)
+
+
+# normalise with training data mean and standard deviation
+titanic.data.num <- titanic.data %>% select(Age,Fare)
+submission.data.num <- submission.data %>% select(Age,Fare)
+
+mean.df <- apply(titanic.data.num[training.idx.start:training.idx.stop,],2, mean, na.rm=T)
+std.df <-  apply(titanic.data.num[training.idx.start:training.idx.stop,],2, sd, na.rm=T)
+
+titanic.data.num <- scale(titanic.data.num, center = mean.df, scale = std.df)
+submission.data.num <- scale(submission.data.num, center = mean.df, scale = std.df)
+```
+
+```{r}
+titanic.data.cat <- titanic.data %>% select(Pclass,Sex,SibSp,Parch,Embarked)
+submission.data.cat <- submission.data %>% select(Pclass,Sex,SibSp,Parch,Embarked)
+
+titanic.data.cat$Sex <- as.factor(as.numeric(as.factor(titanic.data.cat$Sex)))
+titanic.data.cat$Embarked <- as.factor(as.numeric(as.factor(titanic.data.cat$Embarked)))
+titanic.data.cat$Parch <- (as.factor(titanic.data.cat$Parch))
+titanic.data.cat$SibSp <- (as.factor(titanic.data.cat$SibSp))
+titanic.data.cat$Pclass <- (as.factor(titanic.data.cat$Pclass))
+
+submission.data.cat$Sex <- as.factor(as.numeric(as.factor(submission.data.cat$Sex)))
+submission.data.cat$Embarked <- as.factor(as.numeric(as.factor(submission.data.cat$Embarked)))
+submission.data.cat$Parch <- (as.factor(submission.data.cat$Parch))
+submission.data.cat$SibSp <- (as.factor(submission.data.cat$SibSp))
+submission.data.cat$Pclass <- (as.factor(submission.data.cat$Pclass))
+
+# replace missing values with "1"
+titanic.data.cat[is.na(titanic.data.cat)] <- "1"
+submission.data.cat[is.na(submission.data.cat)] <- "1"
+
+oneHotEncodeCategoricals <- function(df){
+  output_df <- matrix(numeric(0), nrow = nrow(df), ncol = 1)
+  
+  for (col in colnames(df)) {
+    to_bind <- to_categorical(df %>% pull(col))
+    colnames(to_bind) <- paste0(col, 1:ncol(to_bind))
+    output_df <- cbind(output_df, to_bind)
+  }
+  output_df[,-1]
+}
+
+titanic.data.cat <- oneHotEncodeCategoricals(titanic.data.cat)
+submission.data.cat <- oneHotEncodeCategoricals(submission.data.cat)
+
+#########################                                            
+titanic.data <- cbind(titanic.data.cat, titanic.data.num)
+submission.data <- cbind(submission.data.cat, submission.data.num)
+
+# convert data into matrix for Keras
+x.train <- as.matrix(titanic.data[training.idx.start:training.idx.stop,])
+x.valid <- as.matrix(titanic.data[1:training.idx.start-1,])
+x.test <- as.matrix(submission.data)
+y.train <- as.matrix(y[training.idx.start:training.idx.stop])
+y.valid <- as.matrix(y[1:training.idx.start-1])
+
+colnames(y.train) <- "Survived"
+colnames(y.valid) <- "Survived"
+```
+

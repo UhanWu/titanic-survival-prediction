@@ -35,5 +35,5 @@ train_data |>
   select(Sex, Survived) |>
   mutate(number = 1) |>
   group_by(Sex) |>
-  summarise(sex_survival = sum(Survived)/891)
+  summarise(sex_survival = sum(Survived)/sum(number))
 ```

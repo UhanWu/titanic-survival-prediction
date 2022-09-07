@@ -1,0 +1,70 @@
+---
+title: "Fare-Analysis"
+output: html_document
+date: "2022-08-31"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(plotly)
+library(ggpubr)
+library(ggpmisc)
+```
+
+```{r}
+train_data <- read_csv("./train.csv", show_col_types = FALSE)
+test_data <- read_csv("./test.csv", show_col_types = FALSE)
+```
+
+```{r}
+train_data|>
+  group_by(Fare) |>
+  mutate(number = 1) |>
+  summarise(fare_survival = sum(Survived)/sum(number))|>
+  mutate(fare_group = case_when(Fare >= 0 & Fare < 50 ~ "Fare Group 0-50",
+                                Fare >= 50 & Fare < 100 ~ "Fare Group 50-100",
+                                Fare >= 100 & Fare < 200 ~ "Fare Group 100-200",
+                                Fare >= 200 ~ "Fare Group 200+"))|>
+  filter(fare_group == "Fare Group 0-50" |
+         fare_group == "Fare Group 50-100") |>
+  ggplot(aes(x = Fare, y = fare_survival))+
+  stat_smooth(method = 'lm', formula = y ~ poly(x, 3, raw = TRUE), se = FALSE)+
+  facet_wrap(~fare_group, nrow = 2)+
+  geom_point()+
+   stat_poly_eq(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = y ~ poly(x, 3, raw = TRUE)) 
+
+train_data|>
+  group_by(Fare) |>
+  mutate(number = 1) |>
+  summarise(fare_survival = sum(Survived)/sum(number))|>
+  mutate(fare_group = case_when(Fare >= 0 & Fare < 50 ~ "Fare Group 0-50",
+                                Fare >= 50 & Fare < 100 ~ "Fare Group 50-100",
+                                Fare >= 100 & Fare < 200 ~ "Fare Group 100-200",
+                                Fare >= 200 ~ "Fare Group 200+"))|>
+  filter(fare_group == "Fare Group 100-200") |>
+  ggplot(aes(x = Fare, y = fare_survival))+
+  stat_smooth(method = 'lm', formula = y ~ poly(x, 3, raw = TRUE), se = FALSE)+
+  facet_wrap(~fare_group, nrow = 2)+
+  geom_point()+
+   stat_poly_eq(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = y ~ poly(x, 3, raw = TRUE)) 
+
+train_data|>
+  group_by(Fare) |>
+  mutate(number = 1) |>
+  summarise(fare_survival = sum(Survived)/sum(number))|>
+  mutate(fare_group = case_when(Fare >= 0 & Fare < 50 ~ "Fare Group 0-50",
+                                Fare >= 50 & Fare < 100 ~ "Fare Group 50-100",
+                                Fare >= 100 & Fare < 200 ~ "Fare Group 100-200",
+                                Fare >= 200 ~ "Fare Group 200+"))|>
+  filter(fare_group == "Fare Group 200+") |>
+  ggplot(aes(x = Fare, y = fare_survival))+
+  stat_smooth(method = 'lm', formula = y ~ poly(x, 2, raw = TRUE), se = FALSE)+
+  facet_wrap(~fare_group, nrow = 2)+
+  geom_point()+
+   stat_poly_eq(aes(label =  paste(..eq.label.., ..rr.label.., sep = "~~~~")),
+    formula = y ~ poly(x, 2, raw = TRUE)) 
+```
+
